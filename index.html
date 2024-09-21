@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Options</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f4;
+            height: 100vh;
+            justify-content: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .tabs {
+            display: flex;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            background: #eee;
+            transition: background 0.3s, color 0.3s;
+        }
+        .tab.active {
+            background: #3559E0;
+            color: white;
+            border-bottom: 1px solid #fff;
+            font-weight: bold;
+        }
+        .tab-content {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 0 0 8px 8px;
+            background: #fff;
+        }
+        .amount {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px;
+            background-color: #3559E0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #2a43b8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" id="tabUpi" onclick="selectTab('upi')">Pay using UPI</div>
+        <div class="tab" id="tabCrypto" onclick="selectTab('crypto')">Pay using Crypto</div>
+    </div>
+    <div class="tab-content" id="upi">
+        <div class="amount" id="upiAmount">Amount: ₹0</div>
+        <button onclick="submitPayment('upi')">Submit by UPI</button>
+    </div>
+    <div class="tab-content" id="crypto" style="display: none;">
+        <div class="amount" id="cryptoAmount">Amount: ₹0</div>
+        <button onclick="submitPayment('crypto')">Submit by Crypto</button>
+    </div>
+</div>
+
+<script>
+    function getQueryParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function selectTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        document.getElementById(tab).style.display = 'block';
+        
+        document.querySelectorAll('.tab').forEach(tabElement => {
+            tabElement.classList.remove('active');
+        });
+        document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+    }
+
+    async function submitPayment(method) {
+        const apiUrl = 'api_url';
+        const amount = getQueryParam('amount');
+
+        if (amount<=0) {
+            alert('Amount should be greater than 0');
+            return;
+        }
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ method, amount })
+            });
+
+            if (!response.ok) {
+                throw new Error('Something went wrong');
+            }
+
+            const result = await response.json();
+
+            // Check for redirect URL in the response
+            if (result.redirectUrl) {
+                window.location.href = result.redirectUrl; // Redirect to the URL from API response
+            } else {
+                alert('No redirect URL provided');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Payment failed');
+        }
+    }
+
+    window.onload = function() {
+        const amount = getQueryParam('amount') || '0';
+
+        document.getElementById('upiAmount').textContent = `Amount: ₹${amount}`;
+        document.getElementById('cryptoAmount').textContent = `Amount: ₹${amount}`;
+        const initialTab = upiAmount !== '0' ? 'upi' : 'crypto';
+        selectTab(initialTab);
+    }
+</script>
+
+</body>
+</html>
